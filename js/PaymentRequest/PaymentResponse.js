@@ -4,11 +4,11 @@
 import type {
   PaymentComplete,
   PaymentDetailsInit,
-  PaymentAddress
-} from './types';
+  PaymentAddress,
+} from "./types";
 
 // Modules
-import NativePayments from '../NativeBridge';
+import NativePayments from "../NativeBridge";
 
 export default class PaymentResponse {
   // Internal Slots
@@ -35,6 +35,21 @@ export default class PaymentResponse {
 
     // Internal Slots
     this._completeCalled = false;
+
+    // https://www.w3.org/TR/payment-request/#complete-method
+    this.complete = (paymentStatus: PaymentComplete) => {
+      if (this._completeCalled === true) {
+        throw new Error("InvalidStateError");
+      }
+
+      this._completeCalled = true;
+
+      return new Promise((resolve, reject) => {
+        return NativePayments.complete(paymentStatus, () => {
+          return resolve(undefined);
+        });
+      });
+    };
   }
 
   // https://www.w3.org/TR/payment-request/#requestid-attribute
@@ -75,20 +90,5 @@ export default class PaymentResponse {
   // https://www.w3.org/TR/payment-request/#payeremail-attribute
   get payerEmail(): null | string {
     return this._payerEmail;
-  }
-
-  // https://www.w3.org/TR/payment-request/#complete-method
-  complete(paymentStatus: PaymentComplete) {
-    if (this._completeCalled === true) {
-      throw new Error('InvalidStateError');
-    }
-
-    this._completeCalled = true;
-
-    return new Promise((resolve, reject) => {
-      return NativePayments.complete(paymentStatus, () => {
-        return resolve(undefined);
-      });
-    });
   }
 }
